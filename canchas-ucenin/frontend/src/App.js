@@ -1,17 +1,18 @@
 import React from 'react';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Perfil from './pages/Perfil';
 
 function App() {
   return (
-    <div className="container">
-      <h1>Canchas UCENIN</h1>
-      <div className="form">
-        <input type="text" placeholder="Nombre de usuario" />
-        <input type="password" placeholder="Contraseña" />
-        <button>Iniciar Sesión</button>
-        <p>¿No tienes cuenta? <a href="#">Registrarse</a></p>
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/perfil" element={<Perfil />} />
+      </Routes>
+    </Router>
   );
 }
 
