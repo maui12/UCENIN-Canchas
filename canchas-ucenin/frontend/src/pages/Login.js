@@ -13,6 +13,12 @@ function Login() {
       return;
     }
 
+    //usuario hardcodeado borrar despues
+    if (usuario === 'a' && contraseña === 'a') {
+      navigate('/dashboard');
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:3000/api/login', {
         method: 'POST',
