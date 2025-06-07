@@ -1,11 +1,8 @@
-// backend/db.js
 const { Sequelize } = require("sequelize");
 
-const sequelize = new Sequelize("sistema_reservas", "postgres", "tu_clave", {
+const sequelize = new Sequelize("reservas", "postgres", "pikachu2", {
   host: "localhost",
-  dialect: "postgres",
-  logging: false,
+  dialect: "postgres"
 });
 
 module.exports = sequelize;
-

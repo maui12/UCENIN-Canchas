@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("./index");
-const Reserva = require("./Reserva");
+const sequelize = require("../db");
+const Reserva = require("./reserva");
 
 const JugadorReserva = sequelize.define("JugadorReserva", {
   nombre: {

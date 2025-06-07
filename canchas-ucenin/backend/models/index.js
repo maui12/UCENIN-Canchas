@@ -5,7 +5,7 @@ const sequelize = require("../db"); // Asegúrate que este sea tu archivo de con
 // Importar modelos
 const Usuario = require("./usuario");
 const Cancha = require("./cancha");
-const Reserva = require("./Reserva");
+const Reserva = require("./reserva");
 const JugadorReserva = require("./JugadorReserva");
 
 // Asociaciones (si no están definidas dentro de cada modelo)

@@ -1,7 +1,3 @@
-const Reserva = require("../models/reserva");
-const Usuario = require("../models/usuario");
-const Cancha = require("../models/cancha");
-const JugadorReserva = require("../models/JugadorReserva");
 const { Reserva, Usuario, Cancha, JugadorReserva } = require("../models");
 
 exports.crearReserva = async (req, res) => {

@@ -1,7 +1,7 @@
 const { DataTypes, Op } = require("sequelize");
-const sequelize = require("./models/index");
-const Usuario = require("./models/Usuario");
-const Cancha = require("./models/Cancha");
+const sequelize = require("../db");
+const Usuario = require("./usuario");
+const Cancha = require("./cancha");
 
 const Reserva = sequelize.define("Reserva", {
   fecha: {

@@ -1,16 +1,17 @@
 require("dotenv").config();
 const express = require("express");
+const { sequelize } = require("./models"); // 👈 importar sequelize correctamente
+
 const app = express();
 const PORT = 5000;
 
-// Middleware para parsear JSON
+// Middleware
 app.use(express.json());
 
-// Importar rutas
+// Rutas
 const canchaRoutes = require("./routes/canchas");
 const reservaRoutes = require("./routes/reservas");
 
-// Usar rutas
 app.use("/api/canchas", canchaRoutes);
 app.use("/api/reservas", reservaRoutes);
 
@@ -19,16 +20,19 @@ app.get("/", (req, res) => {
   res.json({ message: "hola soy el backend" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
-});
+// Conexión y sincronización
+sequelize.authenticate()
+  .then(() => {
+    console.log("✅ Conexión a la base de datos exitosa");
 
-
-const { Sequelize } = require("sequelize");
-
-const sequelize = new Sequelize("padel_db", "usuario", "password", {
-  host: "localhost",
-  dialect: "postgres"
-});
-
-module.exports = sequelize;
+    return sequelize.sync({ alter: true });
+  })
+  .then(() => {
+    console.log("🧱 Tablas sincronizadas correctamente");
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("❌ Error al iniciar el servidor o conectar a la base de datos:", error);
+  });
