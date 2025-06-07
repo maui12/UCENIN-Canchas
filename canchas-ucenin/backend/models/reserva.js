@@ -58,28 +58,65 @@ Reserva.usuarioTieneReservaEseDia = async function (usuarioId, fecha) {
 };
 
 Reserva.crearConValidacion = async function ({ usuarioId, canchaId, fecha, horaInicio, horaFin }) {
-  // 1 semana de anticipación
   const hoy = new Date();
   const fechaReserva = new Date(fecha);
-  const msDiferencia = fechaReserva - hoy;
-  const dias = msDiferencia / (1000 * 60 * 60 * 24);
+  const diferenciaDias = (fechaReserva - hoy) / (1000 * 60 * 60 * 24);
 
-  if (dias < 7) {
+  if (diferenciaDias < 7) {
     throw new Error("La reserva debe hacerse con al menos 1 semana de anticipación");
   }
 
-  const yaTiene = await this.usuarioTieneReservaEseDia(usuarioId, fecha);
-  if (yaTiene) {
-    throw new Error("Ya tienes una reserva ese día");
+  // Calcular duración
+  const duracionHoras = calcularDuracion(horaInicio, horaFin);
+  if (duracionHoras <= 0 || duracionHoras > 3) {
+    throw new Error("Duración inválida");
   }
 
-  const disponible = await this.verificarDisponibilidad({ canchaId, fecha, horaInicio, horaFin });
-  if (!disponible) {
-    throw new Error("Cancha no disponible en ese horario");
+  // Sumar horas previas en esa cancha y fecha
+  const reservas = await Reserva.findAll({
+    where: {
+      usuarioId,
+      canchaId,
+      fecha
+    }
+  });
+
+  const totalHoras = reservas.reduce((suma, r) => {
+    return suma + calcularDuracion(r.horaInicio, r.horaFin);
+  }, 0);
+
+  if (totalHoras + duracionHoras > 3) {
+    throw new Error("Excede el máximo de 3 horas por día para esta cancha.");
+  }
+
+  // Validar solapamiento más robusto
+  const haySolapamiento = await Reserva.findOne({
+    where: {
+      canchaId,
+      fecha,
+      [Op.or]: [
+        {
+          horaInicio: {
+            [Op.lt]: horaFin
+          },
+          horaFin: {
+            [Op.gt]: horaInicio
+          }
+        }
+      ]
+    }
+  });
+
+  if (haySolapamiento) {
+    throw new Error("Ya existe una reserva en ese horario para esta cancha.");
   }
 
   return await this.create({ usuarioId, canchaId, fecha, horaInicio, horaFin });
-};
-
+}
+function calcularDuracion(inicio, fin) {
+  const [h1, m1] = inicio.split(":").map(Number);
+  const [h2, m2] = fin.split(":").map(Number);
+  return (h2 + m2 / 60) - (h1 + m1 / 60);
+}
 module.exports = Reserva;
 
