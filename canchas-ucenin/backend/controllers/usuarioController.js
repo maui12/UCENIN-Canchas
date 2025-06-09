@@ -3,12 +3,35 @@ const { generarToken } = require("../middleware/auth");
 
 exports.registrarUsuario = async (req, res) => {
   try {
-    const { nombre, correo, contraseña} = req.body;
-    const nuevo = await Usuario.create({ nombre, correo, contraseña });
+    console.log("Llamando a registrarUsuario")
+    const { nombre, apellido, rut, edad, correo, password } = req.body;
+
+    // Validar que vengan todos los datos
+    if (!nombre || !apellido || !rut || !edad || !correo || !password) {
+      return res.status(400).json({ msg: "Faltan datos para el registro" });
+    }
+
+    // Validar que rut y correo sean únicos
+    const existeRut = await Usuario.findOne({ where: { rut } });
+    if (existeRut) {
+      return res.status(409).json({ msg: "Ya existe un usuario con ese RUT" });
+    }
+
+    const existeCorreo = await Usuario.findOne({ where: { correo } });
+    if (existeCorreo) {
+      return res.status(409).json({ msg: "Ya existe un usuario con ese correo" });
+    }
+
+    // Crear nuevo usuario
+    const nuevo = await Usuario.create({ nombre, apellido, rut, edad, correo, password });
+
+    // Generar token si usas JWT (puedes omitir si no quieres)
     const token = generarToken(nuevo);
-    res.status(201).json({ token });
+
+    res.status(201).json({ token, usuario: nuevo });
   } catch (e) {
-    res.status(400).json({ error: e.message });
+  console.error("Error en registro:", e);  // 👈 Agrega esto
+  res.status(500).json({ error: e.message });
   }
 };
 
@@ -25,13 +48,17 @@ exports.cargarSaldo = async (req, res) => {
   }
 };
 
-// login solo básico si no usas JWT
+// Login con correo y contraseña
 exports.login = async (req, res) => {
-  const { correo, contraseña } = req.body;
-  const usuario = await Usuario.findOne({ where: { correo } });
-  if (!usuario || !(await usuario.validarPassword(contraseña))) {
-    return res.status(401).json({ msg: "Credenciales incorrectas" });
+  try {
+    const { correo, password } = req.body;
+    const usuario = await Usuario.findOne({ where: { correo } });
+    if (!usuario || !(await usuario.validarPassword(password))) {
+      return res.status(401).json({ msg: "Credenciales incorrectas" });
+    }
+    const token = generarToken(usuario);
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  const token = generarToken(usuario);
-  res.json({ token });
 };

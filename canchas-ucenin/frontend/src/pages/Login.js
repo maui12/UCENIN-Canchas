@@ -51,6 +51,7 @@ function Login() {
       /><br /><br />
       <button onClick={handleLogin}>Iniciar Sesión</button>
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      <button onClick={() => navigate('/registrousuario')}>Registrarse</button>
     </div>
   );
 }
