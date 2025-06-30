@@ -35,10 +35,41 @@ exports.registrarUsuario = async (req, res) => {
   }
 };
 
+
+// Login con correo y contraseña
+exports.login = async (req, res) => {
+  try {
+    const { correo, password } = req.body;
+
+    // Buscar usuario por correo
+    const usuario = await Usuario.findOne({ where: { correo } });
+    if (!usuario) {
+      return res.status(401).json({ msg: "Credenciales incorrectas" });
+    }
+
+    // Verificar contraseña
+    const passwordValida = await usuario.validarPassword(password);
+    if (!passwordValida) {
+      return res.status(401).json({ msg: "Credenciales incorrectas" });
+    }
+
+    // Generar token JWT
+    const token = generarToken(usuario);
+
+    // Enviar token y datos del usuario
+    res.json({ token, usuario });
+  } catch (error) {
+    console.error("Error en login:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.cargarSaldo = async (req, res) => {
   try {
-    const { idUsuario, monto } = req.body;
-    const usuario = await Usuario.findByPk(idUsuario);
+    const { monto } = req.body;
+    const usuarioId = req.usuario.id;
+
+    const usuario = await Usuario.findByPk(usuarioId);
     if (!usuario) return res.status(404).json({ msg: "Usuario no encontrado" });
 
     await usuario.añadirSaldo(monto);
@@ -48,16 +79,14 @@ exports.cargarSaldo = async (req, res) => {
   }
 };
 
-// Login con correo y contraseña
-exports.login = async (req, res) => {
+exports.obtenerPerfil = async (req, res) => {
   try {
-    const { correo, password } = req.body;
-    const usuario = await Usuario.findOne({ where: { correo } });
-    if (!usuario || !(await usuario.validarPassword(password))) {
-      return res.status(401).json({ msg: "Credenciales incorrectas" });
-    }
-    const token = generarToken(usuario);
-    res.json({ token });
+    const usuarioId = req.usuario.id;
+    const usuario = await Usuario.findByPk(usuarioId);
+
+    if (!usuario) return res.status(404).json({ msg: "Usuario no encontrado" });
+
+    res.json({ saldo: usuario.saldo, correo: usuario.correo });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

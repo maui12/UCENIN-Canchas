@@ -5,6 +5,7 @@ const { verificarToken} = require("../middleware/auth");
 
 router.post("/registro", usuarioController.registrarUsuario);
 router.post("/saldo", verificarToken, usuarioController.cargarSaldo);
-router.post("/login", usuarioController.login); // Login no debería requerir token
+router.post("/login", usuarioController.login);
+router.get("/perfil", verificarToken, usuarioController.obtenerPerfil);
 
 module.exports = router;

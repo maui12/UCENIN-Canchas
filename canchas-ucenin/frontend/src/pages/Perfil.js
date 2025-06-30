@@ -1,15 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function Perfil() {
-  const [saldo, setSaldo] = useState(1000); // saldo inicial
+  const [saldo, setSaldo] = useState(0); // saldo desde la base de datos
+  const [monto, setMonto] = useState(''); // monto a ingresar
+  const [error, setError] = useState('');
 
-  const agregarFondos = () => {
-    setSaldo(saldo + 1000); // por ahora agrega y resta $1000 
-  };
+  const token = localStorage.getItem('token');
 
-  const restarFondos = () => {
-    if (saldo >= 1000) {
-      setSaldo(saldo - 1000);
+  // Cargar saldo inicial del usuario al cargar el componente
+  useEffect(() => {
+    const obtenerSaldo = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/usuarios/perfil', {
+          headers: { Authorization: token }
+        });
+        setSaldo(response.data.saldo);
+      } catch (err) {
+        console.error(err);
+        setError('Error al cargar el saldo');
+      }
+    };
+
+    obtenerSaldo();
+  }, [token]);
+
+  const agregarFondos = async () => {
+    const montoNumero = parseFloat(monto);
+    if (isNaN(montoNumero) || montoNumero <= 0) {
+      setError('Ingrese un monto válido.');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/usuarios/saldo', {
+        monto: montoNumero
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setSaldo(response.data.saldo);
+      setMonto('');
+      setError('');
+    } catch (err) {
+      console.error(err);
+      setError('Error al actualizar saldo.');
     }
   };
 
@@ -17,8 +52,17 @@ function Perfil() {
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
       <h2>Perfil del Usuario</h2>
       <p><strong>Saldo actual:</strong> ${saldo}</p>
-      <button onClick={agregarFondos} style={{ marginRight: '10px' }}>Agregar Fondos</button>
-      <button onClick={restarFondos}>Restar Fondos</button>
+
+      <input
+        type="number"
+        placeholder="Ingrese monto"
+        value={monto}
+        onChange={(e) => setMonto(e.target.value)}
+      />
+      <br /><br />
+      <button onClick={agregarFondos}>Agregar Fondos</button>
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 }
