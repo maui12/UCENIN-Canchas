@@ -28,6 +28,7 @@ function Login() {
 
       const data = await response.json();
       localStorage.setItem('token', data.token); // Guarda el token recibido
+      localStorage.setItem('user', JSON.stringify(data.usuario));
 
       alert('Login exitoso');
       navigate('/dashboard'); // Redirige al dashboard
