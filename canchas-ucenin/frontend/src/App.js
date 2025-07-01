@@ -6,6 +6,7 @@ import Perfil from './pages/Perfil';
 import ReservasV2 from './pages/ReservasV2';
 import CrearCancha from './pages/CrearCanchas';
 import ListarReservas from './pages/ListarReservas';
+import RegistroUsuario from './pages/RegistroUsuario';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/reservas" element={<ReservasV2 />} />
         <Route path="/crear-canchas" element={<CrearCancha/>}/>
         <Route path="/listar-reservas" element={<ListarReservas />}/>
+        <Route path="/registro-usuario" element={<RegistroUsuario/>}/>
       </Routes>
     </Router>
   );

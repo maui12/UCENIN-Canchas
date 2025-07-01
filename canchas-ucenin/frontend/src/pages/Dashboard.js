@@ -15,7 +15,12 @@ function Dashboard() {
     navigate('/crear-canchas')
   };
   const gotoListarReservas = () => {
-    navigate('/listar-reservas'); // Define esta ruta en tu App.js
+    navigate('/listar-reservas');
+  };
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
   };
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
@@ -45,6 +50,7 @@ function Dashboard() {
           <button onClick={gotoListarReservas}>Listar Reservas (Admin)</button>
         </>
       )}
+      <button onClick={handleLogout}>Cerrar Sesión</button>
     </div>
   );
 }
