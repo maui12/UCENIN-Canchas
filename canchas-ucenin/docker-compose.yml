@@ -26,7 +26,15 @@ services:
       - "5000:5000"
     volumes:
       - ./backend:/app
-
+  frontend:
+    build: ./frontend
+    container_name: padel_frontend
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
 volumes:
   pgdata:
 

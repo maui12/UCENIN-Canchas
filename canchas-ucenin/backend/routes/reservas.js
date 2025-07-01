@@ -7,7 +7,7 @@ router.get("/usuario/:usuarioId", verificarToken, reservaController.reservasDeUs
 router.get("/:id", verificarToken, reservaController.obtenerReservaPorId);
 router.post("/", verificarToken, reservaController.crearReserva);
 router.delete("/:id", verificarToken, soloAdmin, reservaController.eliminarReserva);
-router.get("/horarios", reservaController.obtenerHorariosPorDia);
+//router.get("/horarios", reservaController.obtenerHorariosPorDia);
 router.get("/horarios", async (req, res) => {
   const { date } = req.query;
 
