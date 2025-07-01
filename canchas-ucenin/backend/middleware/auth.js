@@ -1,9 +1,13 @@
 const jwt = require("jsonwebtoken");
-const SECRET = "clave_secreta_123"; // usa env variable en producción
+const SECRET = process.env.JWT_SECRET || "clave_secreta_123"; // usa la variable de entorno
 
 exports.verificarToken = (req, res, next) => {
-  const token = req.headers["authorization"];
-  if (!token) return res.status(401).json({ msg: "Token requerido" });
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.status(401).json({ msg: "Token requerido" });
+
+  // Esperar formato "Bearer <token>"
+  const token = authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ msg: "Token mal formado" });
 
   try {
     const decoded = jwt.verify(token, SECRET);

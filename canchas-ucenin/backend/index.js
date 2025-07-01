@@ -4,16 +4,20 @@ const { sequelize } = require("./models"); // 👈 importar sequelize correctame
 
 const app = express();
 const PORT = 5000;
+const cors = require('cors');
+app.use(cors());
 
 // Middleware
 app.use(express.json());
 
 // Rutas
+const usuariosRoutes = require("./routes/usuarios");
 const canchaRoutes = require("./routes/canchas");
 const reservaRoutes = require("./routes/reservas");
 
 app.use("/api/canchas", canchaRoutes);
 app.use("/api/reservas", reservaRoutes);
+app.use("/api/usuarios", usuariosRoutes);
 
 // Ruta base
 app.get("/", (req, res) => {
