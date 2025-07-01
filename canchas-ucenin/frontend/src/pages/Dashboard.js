@@ -13,7 +13,10 @@ function Dashboard() {
   };
   const gotoCrearCancha = () =>{
     navigate('/crear-canchas')
-  }
+  };
+  const gotoListarReservas = () => {
+    navigate('/listar-reservas'); // Define esta ruta en tu App.js
+  };
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     try {
@@ -37,9 +40,10 @@ function Dashboard() {
       <button onClick={gotoReservas}>Agregar Reserva</button>
       {/* Renderizado condicional: El botón "Crear Cancha" solo aparece si isAdmin es true */}
       {isAdmin && (
-        <button onClick={gotoCrearCancha} style={{ marginLeft: '10px', backgroundColor: 'lightblue' }}>
-          Crear Cancha (Admin)
-        </button>
+        <>
+          <button onClick={gotoCrearCancha}>Crear Cancha (Admin)</button>
+          <button onClick={gotoListarReservas}>Listar Reservas (Admin)</button>
+        </>
       )}
     </div>
   );

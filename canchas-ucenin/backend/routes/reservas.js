@@ -7,6 +7,7 @@ const { verificarToken, soloAdmin } = require("../middleware/auth");
 
 router.get("/horarios", verificarToken, reservaController.obtenerHorariosDisponibles);
 router.get("/usuario/:usuarioId", verificarToken, reservaController.reservasDeUsuario);
+router.get("/all", verificarToken, soloAdmin, reservaController.listarTodasLasReservas);
 router.get("/:id", verificarToken, reservaController.obtenerReservaPorId);
 router.post("/", verificarToken, reservaController.crearReserva);
 router.delete("/:id", verificarToken, soloAdmin, reservaController.eliminarReserva);

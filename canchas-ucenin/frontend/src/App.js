@@ -3,10 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Perfil from './pages/Perfil';
-//import Reservas from './pages/Reservas'; // 👈 Importar la nueva página
-
 import ReservasV2 from './pages/ReservasV2';
 import CrearCancha from './pages/CrearCanchas';
+import ListarReservas from './pages/ListarReservas';
 
 function App() {
   return (
@@ -17,6 +16,7 @@ function App() {
         <Route path="/perfil" element={<Perfil />} />
         <Route path="/reservas" element={<ReservasV2 />} />
         <Route path="/crear-canchas" element={<CrearCancha/>}/>
+        <Route path="/listar-reservas" element={<ListarReservas />}/>
       </Routes>
     </Router>
   );

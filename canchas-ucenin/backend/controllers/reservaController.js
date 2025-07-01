@@ -167,6 +167,33 @@ exports.obtenerHorariosDisponibles = async (req, res) => {
   }
 };
 
+// Nueva función para listar todas las reservas (para administradores)
+exports.listarTodasLasReservas = async (req, res) => {
+  try {
+    const reservas = await Reserva.findAll({
+      include: [
+        {
+          model: Usuario,
+          attributes: ["id", "nombre", "apellido", "correo", "esAdmin"] // Incluye los datos del usuario que hizo la reserva
+        },
+        {
+          model: Cancha,
+          attributes: ["id", "nombre", "precioReserva"] // Incluye los datos de la cancha reservada
+        },
+        {
+          model: JugadorReserva, // Incluye los jugadores asociados a la reserva
+          attributes: ["id", "nombre", "apellido"] // Puedes ajustar los atributos que necesites
+        }
+      ],
+      order: [['fecha', 'DESC'], ['horaInicio', 'ASC']] // Ordenar por fecha (más reciente primero) y luego por hora
+    });
+    res.status(200).json(reservas);
+  } catch (error) {
+    console.error("Error al listar todas las reservas:", error);
+    res.status(500).json({ error: "Error al obtener el listado de reservas." });
+  }
+};
+
 exports.obtenerReservaPorId = async (req, res) => {
   try {
     const { id } = req.params;
