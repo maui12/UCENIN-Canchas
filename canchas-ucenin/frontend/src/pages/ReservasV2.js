@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import { useNavigate } from 'react-router-dom';
 // URL base de tu API de Node.js
 // ¡IMPORTANTE! Asegúrate de que esta URL y puerto sean los correctos para tu backend.
 // Por ejemplo, si tu backend corre en el puerto 3001, sería 'http://localhost:3001/api/reservas'
@@ -154,6 +154,12 @@ const Reservas = () => {
     }
   };
 
+  const navigate = useNavigate();
+
+  const gotoDashboard = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>Reserva de Canchas</h1>
@@ -212,6 +218,7 @@ const Reservas = () => {
           {loading ? "Reservando..." : "Reservar Horario(s) Seleccionado(s)"}
         </button>
       )}
+      <button onClick={gotoDashboard}>Volver</button>
     </div>
   );
 };

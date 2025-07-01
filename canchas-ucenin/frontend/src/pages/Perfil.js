@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Perfil() {
   const [saldo, setSaldo] = useState(0); // saldo desde la base de datos
@@ -7,6 +8,7 @@ function Perfil() {
   const [error, setError] = useState('');
 
   const token = localStorage.getItem('token');
+  const navigate = useNavigate();
 
   // Cargar saldo inicial del usuario al cargar el componente
   useEffect(() => {
@@ -48,6 +50,10 @@ function Perfil() {
     }
   };
 
+  const gotoDashboard = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div style={{ textAlign: 'center', marginTop: '100px' }}>
       <h2>Perfil del Usuario</h2>
@@ -63,6 +69,9 @@ function Perfil() {
       <button onClick={agregarFondos}>Agregar Fondos</button>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      
+      <button onClick={gotoDashboard}>Volver</button>
     </div>
   );
 }
