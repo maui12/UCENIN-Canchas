@@ -23,6 +23,46 @@ exports.crearReserva = async (req, res) => {
         fecha
       }
     });
+  const { pool } = require("../db");
+  exports.obtenerHorariosPorDia = async (req, res) => {
+  const { date } = req.query;
+
+  if (!date) {
+    return res.status(400).json({ error: "Falta el parámetro 'date'" });
+  }
+
+  try {
+    const query = `
+      WITH horarios AS (
+        SELECT generate_series('08:00'::time, '21:00'::time, '1 hour') AS hora_inicio
+      ),
+      canchas_horarios AS (
+        SELECT c.id AS id_cancha, c.nombre AS cancha, h.hora_inicio
+        FROM canchas c
+        CROSS JOIN horarios h
+      ),
+      reservas_dia AS (
+        SELECT r.canchaId AS id_cancha, r.horaInicio AS hora_inicio
+        FROM reservas r
+        WHERE r.fecha = $1
+      )
+      SELECT 
+        ch.cancha,
+        ch.hora_inicio,
+        CASE WHEN rd.id_cancha IS NULL THEN false ELSE true END AS reservada
+      FROM canchas_horarios ch
+      LEFT JOIN reservas_dia rd
+        ON ch.id_cancha = rd.id_cancha AND ch.hora_inicio = rd.hora_inicio
+      ORDER BY ch.cancha, ch.hora_inicio;
+    `;
+
+    const result = await pool.query(query, [date]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("❌ Error al obtener horarios del día:", error);
+    res.status(500).json({ error: "Error al obtener reservas del día" });
+  }
+};
 
     const totalHoras = reservasDia.reduce((suma, r) => {
       return suma + calcularDuracion(r.horaInicio, r.horaFin);
@@ -93,6 +133,7 @@ exports.eliminarReserva = async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 };
+
 exports.obtenerReservaPorId = async (req, res) => {
   try {
     const { id } = req.params;
