@@ -103,11 +103,7 @@ const Reservas = () => {
     setLoading(true);
     setError(null);
 
-    // Aquí, para simplificar, asumiremos un usuario de prueba y que la reserva es de 1 hora
-    // y que no necesitas ingresar jugadores en esta interfaz.
-    // **NOTA:** Deberás adaptar esto según cómo manejes la autenticación
-    // y la información del usuario en tu aplicación real.
-    const userData = localStorage.getItem('usuario');
+    const userData = localStorage.getItem('user');
     let usuarioIdReal = null;
     if (userData) {
       try {

@@ -44,10 +44,10 @@ exports.crearReserva = async (req, res) => {
     }
 
     // 4. Validar número de jugadores
-    if (!jugadores || jugadores.length === 0) throw new Error("Debes ingresar jugadores.");
-    if (jugadores.length > cancha.maxJugadores) {
-      throw new Error(`La cancha permite máximo ${cancha.maxJugadores} jugadores.`);
-    }
+    //if (!jugadores || jugadores.length === 0) throw new Error("Debes ingresar jugadores.");
+    //if (jugadores.length > cancha.maxJugadores) {
+    //  throw new Error(`La cancha permite máximo ${cancha.maxJugadores} jugadores.`);
+    //}
 
     // 5. Descontar saldo (opcional)
     const costoReserva = cancha.precioReserva ?? 5000;
@@ -63,15 +63,17 @@ exports.crearReserva = async (req, res) => {
     });
 
     // 7. Insertar jugadores
-    for (const jugador of jugadores) {
-      const { nombre, apellido, rut, edad } = jugador;
-      await JugadorReserva.create({
-        reservaId: nuevaReserva.id,
-        nombre,
-        apellido,
-        rut,
-        edad
-      });
+    if (jugadores && jugadores.length > 0) { // Solo intenta insertar si hay jugadores
+      for (const jugador of jugadores) {
+        const { nombre, apellido, rut, edad } = jugador;
+        await JugadorReserva.create({
+          reservaId: nuevaReserva.id,
+          nombre,
+          apellido,
+          rut,
+          edad
+        });
+      }
     }
 
     res.status(201).json(nuevaReserva);
