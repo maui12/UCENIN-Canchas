@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 // URL base de tu API de Node.js
 // ¡IMPORTANTE! Asegúrate de que esta URL y puerto sean los correctos para tu backend.
 // Por ejemplo, si tu backend corre en el puerto 3001, sería 'http://localhost:3001/api/reservas'
-const API_URL = "http://localhost:3001/api/reservas";
+const API_URL = "http://localhost:5000/api/reservas";
 
 const Reservas = () => {
   const [fecha, setFecha] = useState("");
@@ -22,15 +22,27 @@ const Reservas = () => {
 
     setLoading(true);
     setError(null);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError("No estás autenticado para ver los horarios. Por favor, inicia sesión.");
+      setLoading(false);
+      return;
+    }
     try {
-      // Tu endpoint de backend para obtener horarios es '/horarios?date='
-      const response = await fetch(`${API_URL}/horarios?date=${selectedDate}`);
+      const response = await fetch(`${API_URL}/horarios?date=${selectedDate}`, {
+        method: 'GET', // Generalmente es GET para obtener datos
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // ¡AÑADIDO: Envía el token aquí!
+        },
+      });
+
       if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(`Error HTTP: ${response.status} - ${errorData.message || response.statusText}`);
       }
       const data = await response.json();
 
-      // Procesar los datos para agrupar por cancha y mostrar en el frontend
       const canchasMap = new Map();
       data.forEach(item => {
         if (!canchasMap.has(item.id_cancha)) {
@@ -46,13 +58,13 @@ const Reservas = () => {
         });
       });
 
-      // Ordenar las canchas por ID para una visualización consistente
       const canchasArray = Array.from(canchasMap.values()).sort((a, b) => a.id - b.id);
       setCanchasDisponibles(canchasArray);
 
     } catch (err) {
       console.error("Error al obtener horarios desde el backend:", err);
-      setError("No se pudieron cargar los horarios. Inténtalo de nuevo más tarde.");
+      // Mensaje de error más específico para el usuario
+      setError(`No se pudieron cargar los horarios: ${err.message || 'Error desconocido'}. Por favor, asegúrate de estar logueado.`);
     } finally {
       setLoading(false);
     }
@@ -95,11 +107,29 @@ const Reservas = () => {
     // y que no necesitas ingresar jugadores en esta interfaz.
     // **NOTA:** Deberás adaptar esto según cómo manejes la autenticación
     // y la información del usuario en tu aplicación real.
-    const usuarioIdSimulado = 1; // Reemplaza con el ID del usuario logueado
-    const horaDuracion = 1; // Asumimos que cada bloque de reserva es de 1 hora
+    const userData = localStorage.getItem('usuario');
+    let usuarioIdReal = null;
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        usuarioIdReal = user.id;
+      } catch (e) {
+        console.error("Error al parsear usuario de localStorage para reserva:", e);
+        setError("Error de autenticación. Por favor, inicia sesión de nuevo.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (!usuarioIdReal) {
+      setError("No se pudo identificar al usuario para la reserva. Por favor, inicia sesión.");
+      setLoading(false);
+      return;
+    }
+
+    const horaDuracion = 1;
 
     try {
-      // Preparamos las reservas individuales a enviar
       const reservasAEnviar = Object.entries(seleccion).map(([canchaId, horaInicio]) => {
         const [horas, minutos] = horaInicio.split(":").map(Number);
         const horaFin = new Date();
@@ -109,25 +139,30 @@ const Reservas = () => {
         horaFin.setMilliseconds(0);
 
         return {
-          usuarioId: usuarioIdSimulado,
-          canchaId: parseInt(canchaId), // Asegúrate que sea un número
-          fecha: fecha, // La fecha seleccionada
+          usuarioId: usuarioIdReal,
+          canchaId: parseInt(canchaId),
+          fecha: fecha,
           horaInicio: horaInicio,
-          horaFin: horaFin.toTimeString().substring(0, 5), // Formato "HH:MM"
-          jugadores: [] // Si los jugadores se manejan en otra parte o no son obligatorios aquí
+          horaFin: horaFin.toTimeString().substring(0, 5),
+          jugadores: []
         };
       });
 
-      // Puedes enviar las reservas una por una o un array, dependiendo de tu API
-      // Para este ejemplo, las enviaremos de una en una.
-      const resultadosReservas = [];
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        setError("No estás autenticado para realizar reservas. Por favor, inicia sesión.");
+        setLoading(false);
+        return;
+      }
+
+      const resultadosReservas = []; // Asegurarse de que esta variable esté declarada
       for (const reservaData of reservasAEnviar) {
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            // Si usas tokens de autenticación (JWT), deberías enviarlo aquí:
-            // 'Authorization': `Bearer ${tuTokenDeAutenticacion}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(reservaData)
         });
@@ -135,16 +170,14 @@ const Reservas = () => {
         const result = await response.json();
 
         if (!response.ok) {
-          // Si una reserva falla, lanzamos un error que será capturado por el catch
           throw new Error(result.error || `Error al reservar la cancha ${reservaData.canchaId} a las ${reservaData.horaInicio}`);
         }
         resultadosReservas.push(result);
       }
 
       alert("¡Reserva(s) realizada(s) con éxito!");
-      // Volver a cargar los horarios para que se reflejen los cambios (reservas)
       fetchHorariosDisponibles(fecha);
-      setSeleccion({}); // Limpiar la selección actual
+      setSeleccion({});
     } catch (err) {
       console.error("Error al enviar la reserva:", err);
       setError(`Error al reservar: ${err.message}.`);
@@ -188,14 +221,14 @@ const Reservas = () => {
                 <button
                   key={`${cancha.id}-${horario.hora}`}
                   onClick={() => seleccionarHorario(cancha.id, horario.hora)}
-                  disabled={horario.reservada || loading} // Deshabilita si está reservado o cargando
+                  disabled={horario.reservada || loading}
                   style={{
                     padding: "5px 10px",
                     backgroundColor: horario.reservada
-                      ? "salmon" // Rojo si está reservado
+                      ? "salmon"
                       : seleccion[cancha.id] === horario.hora
-                      ? "lightgreen" // Verde si está seleccionado
-                      : "lightgray", // Gris si está disponible
+                      ? "lightgreen"
+                      : "lightgray",
                     color: horario.reservada ? "white" : "black",
                     border: "1px solid #ccc",
                     cursor: horario.reservada || loading ? "not-allowed" : "pointer"
@@ -212,7 +245,7 @@ const Reservas = () => {
       {fecha && (
         <button
           onClick={enviarReserva}
-          disabled={loading || Object.keys(seleccion).length === 0} // Deshabilita si está cargando o no hay nada seleccionado
+          disabled={loading || Object.keys(seleccion).length === 0}
           style={{ marginTop: "20px", padding: "10px 20px", opacity: (loading || Object.keys(seleccion).length === 0) ? 0.6 : 1 }}
         >
           {loading ? "Reservando..." : "Reservar Horario(s) Seleccionado(s)"}

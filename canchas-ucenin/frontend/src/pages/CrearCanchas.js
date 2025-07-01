@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const CrearCancha = () => {
   const [nombreCancha, setNombreCancha] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const gotoDashboard = () => {
+    navigate('/dashboard');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Evita el recargado de la página por defecto del formulario
@@ -26,7 +32,7 @@ const CrearCancha = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:3000/api/canchas', { // ¡Asegúrate de que esta sea la URL correcta de tu backend!
+      const response = await fetch('http://localhost:5000/api/canchas', { // ¡Asegúrate de que esta sea la URL correcta de tu backend!
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,6 +74,7 @@ const CrearCancha = () => {
 
       {mensaje && <p style={{ color: 'green' }}>{mensaje}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      <button onClick={gotoDashboard}>Volver</button>
     </div>
   );
 };

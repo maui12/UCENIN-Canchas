@@ -1,4 +1,15 @@
+// reservaController.js
+
 const { Reserva, Usuario, Cancha, JugadorReserva } = require("../models");
+// Si necesitas 'pool' para otras funciones que usen SQL crudo, impórtalo aquí una sola vez.
+// const pool = require("../db");
+
+// Función auxiliar para calcular duración de la reserva
+function calcularDuracion(inicio, fin) {
+  const [h1, m1] = inicio.split(":").map(Number);
+  const [h2, m2] = fin.split(":").map(Number);
+  return (h2 + m2 / 60) - (h1 + m1 / 60);
+}
 
 exports.crearReserva = async (req, res) => {
   try {
@@ -13,7 +24,7 @@ exports.crearReserva = async (req, res) => {
     if (!cancha) throw new Error("Cancha no válida");
 
     // 3. Validar duración y que no exceda 3 horas acumuladas ese día
-    const duracion = calcularDuracion(horaInicio, horaFin); // helper (abajo)
+    const duracion = calcularDuracion(horaInicio, horaFin);
     if (duracion <= 0 || duracion > 3) throw new Error("Duración inválida");
 
     const reservasDia = await Reserva.findAll({
@@ -23,46 +34,6 @@ exports.crearReserva = async (req, res) => {
         fecha
       }
     });
-  const { pool } = require("../db");
-  exports.obtenerHorariosPorDia = async (req, res) => {
-  const { date } = req.query;
-
-  if (!date) {
-    return res.status(400).json({ error: "Falta el parámetro 'date'" });
-  }
-
-  try {
-    const query = `
-      WITH horarios AS (
-        SELECT generate_series('08:00'::time, '21:00'::time, '1 hour') AS hora_inicio
-      ),
-      canchas_horarios AS (
-        SELECT c.id AS id_cancha, c.nombre AS cancha, h.hora_inicio
-        FROM canchas c
-        CROSS JOIN horarios h
-      ),
-      reservas_dia AS (
-        SELECT r.canchaId AS id_cancha, r.horaInicio AS hora_inicio
-        FROM reservas r
-        WHERE r.fecha = $1
-      )
-      SELECT 
-        ch.cancha,
-        ch.hora_inicio,
-        CASE WHEN rd.id_cancha IS NULL THEN false ELSE true END AS reservada
-      FROM canchas_horarios ch
-      LEFT JOIN reservas_dia rd
-        ON ch.id_cancha = rd.id_cancha AND ch.hora_inicio = rd.hora_inicio
-      ORDER BY ch.cancha, ch.hora_inicio;
-    `;
-
-    const result = await pool.query(query, [date]);
-    res.json(result.rows);
-  } catch (error) {
-    console.error("❌ Error al obtener horarios del día:", error);
-    res.status(500).json({ error: "Error al obtener reservas del día" });
-  }
-};
 
     const totalHoras = reservasDia.reduce((suma, r) => {
       return suma + calcularDuracion(r.horaInicio, r.horaFin);
@@ -110,15 +81,14 @@ exports.crearReserva = async (req, res) => {
   }
 };
 
-function calcularDuracion(inicio, fin) {
-  const [h1, m1] = inicio.split(":").map(Number);
-  const [h2, m2] = fin.split(":").map(Number);
-  return (h2 + m2 / 60) - (h1 + m1 / 60);
-}
-
 exports.reservasDeUsuario = async (req, res) => {
-  const reservas = await Reserva.findAll({ where: { usuarioId: req.params.usuarioId } });
-  res.json(reservas);
+  try {
+    const reservas = await Reserva.findAll({ where: { usuarioId: req.params.usuarioId } });
+    res.json(reservas);
+  } catch (error) {
+    console.error("Error al obtener reservas de usuario:", error);
+    res.status(500).json({ error: error.message });
+  }
 };
 
 exports.eliminarReserva = async (req, res) => {
@@ -130,7 +100,68 @@ exports.eliminarReserva = async (req, res) => {
     await reserva.destroy();
     res.json({ msg: "Reserva eliminada" });
   } catch (e) {
+    console.error("Error al eliminar reserva:", e);
     res.status(500).json({ error: e.message });
+  }
+};
+
+// ESTA ES LA FUNCIÓN QUE DEBE MANEJAR /api/reservas/horarios
+exports.obtenerHorariosDisponibles = async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ error: 'Falta el parámetro de fecha (date).' });
+    }
+
+    const fechaConsulta = date;
+
+    // Horarios posibles del día (ajusta si tus horarios son diferentes)
+    const horasDelDia = [
+      '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+      '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+    ];
+
+    // Obtener todas las canchas disponibles
+    const canchas = await Cancha.findAll({
+      where: { disponible: true } // Filtrar solo canchas activas/disponibles
+    });
+
+    // Obtener todas las reservas para la fecha específica
+    const reservasDelDia = await Reserva.findAll({
+      where: {
+        fecha: fechaConsulta
+      },
+      attributes: ['canchaId', 'horaInicio']
+    });
+
+    // Crear un mapa de las horas ya reservadas por cancha
+    const reservasMap = new Map(); // { canchaId: Set<horaInicio> }
+    reservasDelDia.forEach(reserva => {
+      if (!reservasMap.has(reserva.canchaId)) {
+        reservasMap.set(reserva.canchaId, new Set());
+      }
+      reservasMap.get(reserva.canchaId).add(reserva.horaInicio);
+    });
+
+    // Formatear la respuesta para el frontend
+    const dataParaFrontend = [];
+    canchas.forEach(cancha => {
+      horasDelDia.forEach(hora => {
+        const reservada = reservasMap.has(cancha.id) && reservasMap.get(cancha.id).has(hora);
+        dataParaFrontend.push({
+          id_cancha: cancha.id,
+          cancha: cancha.nombre,
+          hora_inicio: hora,
+          reservada: reservada
+        });
+      });
+    });
+
+    res.status(200).json(dataParaFrontend);
+
+  } catch (error) {
+    console.error("Error al obtener horarios disponibles:", error);
+    res.status(500).json({ error: 'Error al obtener horarios disponibles.' });
   }
 };
 
@@ -159,7 +190,6 @@ exports.obtenerReservaPorId = async (req, res) => {
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-    // Validar que sea el dueño o un admin
     const usuarioAutenticado = req.usuario;
 
     const esPropietario = usuarioAutenticado.id === reserva.usuarioId;
